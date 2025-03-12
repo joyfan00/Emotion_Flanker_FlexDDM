@@ -12,3 +12,4 @@ from .mSSPit import mSSPit
 from .SSP import SSP
 from .SSPit import SSPit
 from .StandardDDM import StandardDDM
+from .Race_Emotion_Bias_DMC import Race_Emotion_Bias_DMC

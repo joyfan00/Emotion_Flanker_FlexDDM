@@ -86,10 +86,12 @@ class Model:
 
         m = Model(bounds=bounds, param_number=param_number, parameter_names=parameter_names)
         predictions = m.model_predict(function, x, props)
-        empirical_proportions = [props['cdf_props_congruent'], props['cdf_props_incongruent'],
-                                props['caf_props_congruent'], props['caf_props_incongruent']]
-        model_proportions = [predictions['cdf_props_congruent'], predictions['cdf_props_incongruent'],
-                                predictions['caf_props_congruent'], predictions['caf_props_incongruent']]
+        empirical_proportions = []
+        model_proportions = []
+        for condition in props.keys():
+            if condition.startswith("cdf_props_") or condition.startswith("caf_props_"):
+                empirical_proportions.append(props[condition])
+                model_proportions.append(predictions[condition])
         looplist = [empirical_proportions, model_proportions]
         for i, x in enumerate(looplist):
             for j, y in enumerate(x):
@@ -113,60 +115,65 @@ class Model:
     
     def parallel_sim(self, function, parameters):
         """
-        Runs parallel simulations for a specific model. 
-
-        @function (str): function being run for a specific model 
-        @parameters (dict): all of the variables necessary for a particular model in dictionary form (name of variable is key, value of variable is value)
-        @nTrials (int): number of trials 
-        @cores (int): number of cores 
-        @bins (int): number of bins 
+        Runs parallel simulations for a specific model.
         """
-        jobs=[]
+        jobs = []
         results = []
- 
+
         values_list = list(parameters)
         values_tuple = tuple(values_list)
-        jobs = [values_tuple]*1
-        
+        jobs = [values_tuple] * 1
+
         for x in range(len(jobs)):
-            jobs[x] = jobs[x] + (0.001, 0.01, int(NTRIALS/1)) + (x,)
+            jobs[x] = jobs[x] + (0.001, 0.01, int(NTRIALS / 1)) + (x,)
 
         results.append(function(*parameters))
+        # print(parameters)
 
         acclist = [results[x][1] for x in range(len(jobs))]
         rtlist = [results[x][2] for x in range(len(jobs))]
-        congruencylist = [results[x][3] for x in range(len(jobs))]
+        conditionlist = [results[x][3] for x in range(len(jobs))]
 
-        sim_data = pd.DataFrame({'accuracy': [item for sublist in acclist for item in sublist],
-                                'rt': [item for sublist in rtlist for item in sublist],
-                                'congruency': [item for sublist in congruencylist for item in sublist]})
+        # print(acclist)
+        # print(rtlist)
+        # print(conditionlist)
+
+        sim_data = pd.DataFrame({
+            'accuracy': [item for sublist in acclist for item in sublist],
+            'rt': [item for sublist in rtlist for item in sublist],
+            'condition': [str(item.decode() if isinstance(item, bytes) else item) for sublist in conditionlist for item in sublist]
+        })
+
+        # print("DEBUG: Conditions stored in sim_data['condition']:", sim_data['condition'].unique())
 
         return sim_data
 
     def proportions(self, data, cdfs, cafs):
         """
-        Calculate proportion of how percentage of RTs in quantiles. 
-        @data (): simulated data
-        @cdfs (): percentiles used (0.1, 0.3, 0.5, 0.7, 0.9)
-        @cafs (): percentiles used 
+        Calculate proportion of how percentage of RTs in quantiles.
         """
         props = self.cdf_binsize(cdfs)
-        data_congruent = data[data['congruency']=='congruent']
-        data_incongruent = data[data['congruency']=='incongruent']
+        conditions = data['condition'].unique()
 
-        cdf_props_congruent, caf_props_congruent = self.cdf_caf_proportions(data_congruent, props, cafs)
-        cdf_props_incongruent, caf_props_incongruent = self.cdf_caf_proportions(data_incongruent, props, cafs)
+        results = {'cdfs': cdfs, 'cafs': cafs}
 
-        caf_congruent, cdf_congruent, caf_cutoff_congruent = self.caf_cdf(data_congruent)
-        caf_incongruent, cdf_incongruent, caf_cutoff_incongruent = self.caf_cdf(data_incongruent)
-        # add the word cutoff to cdf_congruent and cdf_incongruent (so cdf_cutoff_congruent and cdf_cutoff_incongruent)
-        return {'cdfs': cdfs, 'cafs': cafs, 'cdf_props_congruent': cdf_props_congruent,
-                'cdf_props_incongruent': cdf_props_incongruent, 'caf_props_congruent': caf_props_congruent,
-                'caf_props_incongruent': caf_props_incongruent, 'cdf_congruent': cdf_congruent,
-                'cdf_incongruent': cdf_incongruent, 'caf_cutoff_congruent': caf_cutoff_congruent,
-                'caf_cutoff_incongruent': caf_cutoff_incongruent, 'caf_congruent_rt': list(caf_congruent['rt']),
-                'caf_congruent_acc': list(caf_congruent['acc']), 'caf_incongruent_rt': list(caf_incongruent['rt']),
-                'caf_incongruent_acc': list(caf_incongruent['acc'])}
+        # print("DEBUG: Conditions in data:", conditions)  # Debug available conditions
+
+        for condition in conditions:
+            condition_str = condition.decode() if isinstance(condition, bytes) else str(condition)
+
+            data_condition = data[data['condition'] == condition]
+            cdf_props, caf_props = self.cdf_caf_proportions(data_condition, props, cafs)
+            caf_data, cdf_data, caf_cutoff = self.caf_cdf(data_condition)
+
+            results[f'cdf_props_{condition_str}'] = cdf_props
+            results[f'caf_props_{condition_str}'] = caf_props
+            results[f'cdf_cutoff_{condition_str}'] = cdf_data
+            results[f'caf_cutoff_{condition_str}'] = caf_cutoff
+            results[f'caf_{condition_str}_rt'] = list(caf_data['rt'])
+            results[f'caf_{condition_str}_acc'] = list(caf_data['acc'])
+
+        return results
 
     def cdf_binsize(self, cdfs=[0.1, 0.3, 0.5, 0.7, 0.9]):
         """
@@ -251,25 +258,45 @@ class Model:
   
     def model_predict(self, function, params, props):
         """
-        Predicts using the behavioral model. 
-        @params (list):
-        @nTrials (int):
-        @props ():
-        @cores (int):
-        @bins (int):
-        @dt (float): change in time
-        @var (float): variance
+        Predicts using the behavioral model.
+
+        @function (callable): The model function used for simulation.
+        @params (list): Parameters for the model.
+        @props (dict): Dictionary containing cdf and caf properties.
+        
+        Returns:
+            dict: Model properties containing cdf and caf proportions.
         """
         np.random.seed(100)
         sim_data = self.parallel_sim(function, params)
 
-        sim_data_congruent = sim_data[sim_data['congruency']=='congruent']
-        sim_data_incongruent = sim_data[sim_data['congruency']=='incongruent']
-        cdfs_congruent, cafs_congruent = self.model_cdf_caf_proportions(sim_data_congruent, props['cdf_congruent'], props['caf_cutoff_congruent'])
-        cdfs_incongruent, cafs_incongruent = self.model_cdf_caf_proportions(sim_data_incongruent, props['cdf_incongruent'], props['caf_cutoff_incongruent'])
+        # Ensure that the 'condition' column exists
+        if 'condition' not in sim_data.columns:
+            raise KeyError("The simulated data does not contain a 'condition' column.")
+        
 
-        modelprops = {'cdf_props_congruent': cdfs_congruent, 'caf_props_congruent': cafs_congruent,
-                    'cdf_props_incongruent': cdfs_incongruent, 'caf_props_incongruent': cafs_incongruent}
+        unique_conditions = sim_data['condition'].unique()
+        modelprops = {}
+
+        for condition in unique_conditions:
+            condition_str = str(condition)  # Ensure string format for dictionary keys
+            
+            # Filter data for the current condition
+            sim_data_condition = sim_data[sim_data['condition'] == condition]
+
+            # Dynamically fetch cdf and caf properties for the condition
+            cdf_key = f'cdf_props_{condition_str}'
+            caf_key = f'caf_cutoff_{condition_str}'
+
+            if cdf_key in props and caf_key in props:
+                cdfs, cafs = self.model_cdf_caf_proportions(
+                    sim_data_condition, props[cdf_key], props[caf_key]
+                )
+                modelprops[f'cdf_props_{condition_str}'] = cdfs
+                modelprops[f'caf_props_{condition_str}'] = cafs
+            else:
+                print(f"Warning: Missing properties for condition {condition_str}")
+
         return modelprops
 
     def model_cdf_caf_proportions(self, data, cdfs, cafcutoffs):

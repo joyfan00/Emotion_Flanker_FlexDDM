@@ -74,7 +74,7 @@ class SSP(Model):
         rtlist = [np.nan]*nTrials
 
         # Creates congruency list with first half of trials being congruent and the following being incongruent
-        congruencylist = ['congruent']*int(nTrials//2) + ['incongruent']*int(nTrials//2) 
+        congruencylist = [0]*int(nTrials//2) + [1]*int(nTrials//2) 
         np.random.seed(noiseseed)
 
         # beta = 0.5
@@ -90,7 +90,7 @@ class SSP(Model):
                     sd = 0.001
                 s_ta = ((1 + math.erf((.5 - 0) / sd / np.sqrt(2))) / 2) - ((1 + math.erf((-.5 - 0) / sd / np.sqrt(2))) / 2)
                 s_fl = 1 - s_ta
-                if congruencylist[n] == 'incongruent':
+                if congruencylist[n] == 0:
                     delta = s_ta*p - s_fl*p
                 else:
                     delta = s_ta*p + s_fl*p
