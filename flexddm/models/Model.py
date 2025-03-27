@@ -25,7 +25,7 @@ class Model:
     global parameter_names
 
     global NTRIALS
-    NTRIALS = 100
+    NTRIALS = 800
     global QUANTILES_CDF 
     QUANTILES_CDF = [.10, .30, .50, .70, .90]
     global QUANTILES_CAF
@@ -168,7 +168,7 @@ class Model:
 
             results[f'cdf_props_{condition_str}'] = cdf_props
             results[f'caf_props_{condition_str}'] = caf_props
-            results[f'cdf_cutoff_{condition_str}'] = cdf_data
+            results[f'cdf_{condition_str}'] = cdf_data
             results[f'caf_cutoff_{condition_str}'] = caf_cutoff
             results[f'caf_{condition_str}_rt'] = list(caf_data['rt'])
             results[f'caf_{condition_str}_acc'] = list(caf_data['acc'])
@@ -285,7 +285,7 @@ class Model:
             sim_data_condition = sim_data[sim_data['condition'] == condition]
 
             # Dynamically fetch cdf and caf properties for the condition
-            cdf_key = f'cdf_props_{condition_str}'
+            cdf_key = f'cdf_{condition_str}'
             caf_key = f'caf_cutoff_{condition_str}'
 
             if cdf_key in props and caf_key in props:

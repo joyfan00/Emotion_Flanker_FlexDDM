@@ -17,7 +17,7 @@ class Race_Emotion_Bias_DMC(Model):
 
     DT = 0.01  # Time step
     VAR = 0.01  # Variance
-    NTRIALS = 200  # Number of trials
+    NTRIALS = 800  # Number of trials
     NOISESEED = 50  # Seed for noise
 
     def __init__(self, data=None, input_data_id="PPT", input_data_congruency="Condition", 
@@ -42,7 +42,7 @@ class Race_Emotion_Bias_DMC(Model):
             min_rt = min(self.data['rt']) if not self.data.empty else 0.45  # Avoid issues if data is empty
 
         self.bounds = {
-            "alpha": (0.07, 0.5),
+            "alpha": (0.07, 0.38),
             # "beta": (0, 1),
             "mu_c": (0.01, 0.8),
             # "shape": (1.5, 4.5),
@@ -137,7 +137,7 @@ class Race_Emotion_Bias_DMC(Model):
                     #           (((shape - 1) / t) - (1 / characteristic_time))) + mu_c)
                     # print('DELTA BOTTOM', delta)
 
-                noise = update_jitter[n % 1000]
+                noise = np.random.choice(update_jitter)
                 evidence += delta * dt + noise
                 t += dt
 
