@@ -15,3 +15,4 @@ from .StandardDDM import StandardDDM
 from .Race_Emotion_Bias_DMC import Race_Emotion_Bias_DMC
 from .Race_Emotion_Bias_DMC_Beta import Race_Emotion_Bias_DMC_Beta
 from .Race_Emotion_Bias_DMC_Beta_1 import Race_Emotion_Bias_DMC_Beta_1
+from .mRace_Emotion_Bias_DMC import mRace_Emotion_Bias_DMC

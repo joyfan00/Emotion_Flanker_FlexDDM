@@ -80,6 +80,9 @@ def fit(models, input_data, startingParticipants=None, endingParticipants=None,
                 # Simulate data using fitted parameters (same # of trials as the real data)
                 res = model.modelsimulationfunction(*pars, nTrials=len(current_input))
                 simulated_rts = convertToDF(res, id)
+                # for n in range(len(simulated_rts['condition'])):
+                #     simulated_rts['condition'][n] = simulated_rts['condition'][n][1:-1].replace(' ', '-')
+
 
                 # Create a combined DataFrame for easy plotting
                 rt_data = pd.DataFrame({

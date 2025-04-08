@@ -1,23 +1,27 @@
 import pandas as pd 
+import numpy as np
 
 def convertToDF(tuple_data, participant_id):
     """
     Converts simulated data from a tuple into a pandas DataFrame.
+    Combines multi-column condition array into a single string per row: 'x-y-z'.
     """
-    return pd.DataFrame({
+    condition_array = np.array(tuple_data[3])  # shape: (n_trials, 3)
+
+    # Build the DataFrame
+    sim_data = pd.DataFrame({
         'id': [participant_id] * len(tuple_data[0]),
         'trial': tuple_data[0],
         'accuracy': tuple_data[1], 
         'rt': tuple_data[2],
-        'condition': tuple_data[3]
-        # condition_list is now an (nTrials x 3) array in your example –
-        # store each column as condition_0, condition_1, condition_2, etc.
-        # This means 'congruency' in the tuple is actually an array of shape (nTrials, #conditions).
-        # We'll keep them in separate columns so you can group on them later.
-        # 'condition_0': tuple_data[3][:,0],
-        # 'condition_1': tuple_data[3][:,1],
-        # 'condition_2': tuple_data[3][:,2],
     })
+
+    # Combine condition columns into a single string column like "1-0-1"
+    sim_data['condition'] = [
+        f"{row[0]}-{row[1]}-{row[2]}" for row in condition_array
+    ]
+
+    return sim_data
 
 
 def getRTData(path, input_data_id, input_data_condition, input_data_rt, input_data_accuracy):

@@ -62,7 +62,7 @@ class Race_Emotion_Bias_DMC_Beta_1(Model):
 
         super().__init__(self.param_number, list(self.bounds.values()), self.parameter_names)
 
-    # @nb.jit(nopython=True, cache=True, parallel=False, fastmath=True, nogil=True)
+    @nb.jit(nopython=True, cache=True, parallel=False, fastmath=True, nogil=True)
     def model_simulation(alpha, beta, mu_c, characteristic_time, emotion_bias, 
                          racial_bias, distractor_bias, emotion_amplification_bias, tau, dt=DT, var=VAR, 
                          nTrials=NTRIALS, noiseseed=NOISESEED):
@@ -93,7 +93,6 @@ class Race_Emotion_Bias_DMC_Beta_1(Model):
         update_jitter = np.random.normal(loc=0, scale=var, size=1000)
 
         condition_list = np.zeros((nTrials, 3), dtype=np.int64)
-        condition_str_list = np.empty(nTrials, dtype=object) 
         
         for i in range(nTrials // 8):
             condition_list[i] = [0, 0, 0]
@@ -105,8 +104,8 @@ class Race_Emotion_Bias_DMC_Beta_1(Model):
             condition_list[i + 6 * nTrials // 8] = [1, 1, 0]
             condition_list[i + 7 * nTrials // 8] = [1, 1, 1]
         
-        for n in range(nTrials):
-            condition_str_list[n] = f'{condition_list[n,0]}-{condition_list[n,1]}-{condition_list[n,2]}'
+        # condition_str_list = [['0-0-0'] * (nTrials // 8) + ['0-0-1'] * (nTrials // 8) + ['0-1-0'] * (nTrials // 8) + ['0-1-1'] * (nTrials // 8) +
+        #                     ['1-0-0'] * (nTrials // 8) + ['1-0-1'] * (nTrials // 8) + ['1-1-0'] * (nTrials // 8) + ['1-1-1'] * (nTrials // 8)] 
         
         for n in range(nTrials):
             # neutral- if it is incongruent, you should have a further negative distraction bias 
@@ -153,4 +152,4 @@ class Race_Emotion_Bias_DMC_Beta_1(Model):
                     rtlist[n] = t
                     break
         
-        return np.arange(1, nTrials + 1), choicelist, rtlist, condition_str_list
+        return np.arange(1, nTrials + 1), choicelist, rtlist, condition_list

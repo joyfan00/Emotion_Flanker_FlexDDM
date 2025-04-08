@@ -144,7 +144,8 @@ class Model:
             'condition': [str(item.decode() if isinstance(item, bytes) else item) for sublist in conditionlist for item in sublist]
         })
 
-        # print("DEBUG: Conditions stored in sim_data['condition']:", sim_data['condition'].unique())
+        for n in range(len(sim_data['condition'])):
+            sim_data['condition'][n] = sim_data['condition'][n][1:-1].replace(' ', '-')
 
         return sim_data
 
